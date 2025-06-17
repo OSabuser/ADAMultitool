@@ -1,0 +1,6 @@
+[workspace]
+resolver = "3"
+members = [ "config_utility","main_menu", "misc", "protocol"]
+
+[workspace.package]
+authors = ["Dmitry Akimov <akimov@machunit.com>"]
