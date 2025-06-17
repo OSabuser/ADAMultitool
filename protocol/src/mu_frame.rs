@@ -1,0 +1,183 @@
+use crate::error::FrameDecodeError;
+use std::fmt::Display;
+
+const SYNC1: u8 = 0xAA;
+const SYNC2: u8 = 0xBB;
+const MAX_DATA_SIZE: u8 = u8::MAX;
+
+#[derive(Debug)]
+enum MUOpcode {
+    ConsoleMode = 0xC0,
+}
+
+#[derive(Debug)]
+pub struct MUFrame {
+    prefix: u8,
+    length: u8,
+    opcode: u8,
+    data: Vec<u8>,
+    crc: u8,
+    suffix: u8,
+}
+
+impl MUFrame {
+    pub fn new() -> Self {
+        Self {
+            prefix: 0,
+            length: 0,
+            opcode: 0,
+            data: Vec::with_capacity(MAX_DATA_SIZE as usize),
+            crc: 0,
+            suffix: 0,
+        }
+    }
+
+    /// Десериализация данных из буфера
+    pub fn deserialize(data: &[u8]) -> Result<Self, String> {
+        let mut frame = Self::new();
+        frame.prefix = data[0];
+        frame.length = data[1];
+        frame.opcode = data[2] as u8;
+        frame.data = data[3..3 + frame.length as usize].to_vec();
+        frame.crc = data[3 + frame.length as usize];
+        frame.suffix = data[4 + frame.length as usize];
+        Ok(frame)
+    }
+
+    /// Сериализация данных
+    pub fn serialize(&self) -> Vec<u8> {
+        let mut result = Vec::with_capacity(5 + self.length as usize);
+        result.push(self.prefix);
+        result.push(self.length);
+        result.push(self.opcode);
+        result.extend(self.data.iter());
+        result.push(self.crc);
+        result.push(self.suffix);
+        result
+    }
+
+    pub fn invalidate_frame(&self) -> Result<(), FrameDecodeError> {
+        if !self.is_prefix_correct() {
+            return Err(FrameDecodeError::BadPrefix);
+        }
+        if !self.is_postfix_correct() {
+            return Err(FrameDecodeError::BadPostfix);
+        }
+        if !self.is_crc_valid(self.crc) {
+            return Err(FrameDecodeError::BadCRC);
+        }
+
+        if !self.data.is_ascii() {
+            return Err(FrameDecodeError::BadEncoding);
+        }
+
+        Ok(())
+    }
+
+    /// Вычисление CRC
+    fn calculate_src(&self) -> u8 {
+        const CRC8_MU: crc::Crc<u8> = crc::Crc::<u8>::new(&crc::CRC_8_NRSC_5);
+
+        let mut crc_data = Vec::with_capacity(self.length as usize + 1);
+        crc_data.push(self.opcode);
+        crc_data.extend(self.data.iter());
+
+        CRC8_MU.checksum(&crc_data)
+    }
+
+    /// Проверка соответствия фактического CRC посылки с принятым
+    fn is_crc_valid(&self, crc: u8) -> bool {
+        let calculated_crc = self.calculate_src();
+        calculated_crc == crc
+    }
+
+    /// Проверка корректности префикса (SYNC1)
+    fn is_prefix_correct(&self) -> bool {
+        self.prefix == SYNC1
+    }
+
+    /// Проверка корректности постфикса (SYNC2)
+    fn is_postfix_correct(&self) -> bool {
+        self.suffix == SYNC2
+    }
+}
+
+impl Display for MUFrame {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "MU Message: \n 1.Opcode={}, \n 2.Data length={} \n 3.Payload={:?} \n 4.CRC={}",
+            self.opcode, self.length, self.data, self.crc
+        )
+    }
+}
+
+impl Display for MUOpcode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_check_crc_calculation() {
+        let mut frame = MUFrame::new();
+        frame.opcode = MUOpcode::ConsoleMode as u8;
+        frame.data = b"Hello, server!\n".to_vec();
+        assert_eq!(frame.is_crc_valid(0xBD), true);
+    }
+
+    #[test]
+    fn test_serialize() {
+        let mut frame = MUFrame::new();
+        frame.prefix = SYNC1;
+        frame.opcode = MUOpcode::ConsoleMode as u8;
+        frame.data = b"Test string!\n".to_vec();
+        frame.length = frame.data.len() as u8;
+        frame.crc = frame.calculate_src();
+        frame.suffix = SYNC2;
+
+        let serialized_vec = frame.serialize();
+        assert_eq!(serialized_vec.len(), 5 + frame.length as usize);
+
+        assert_eq!(
+            serialized_vec,
+            vec![
+                0xAA, 0x0D, 0xC0, 0x54, 0x65, 0x73, 0x74, 0x20, 0x73, 0x74, 0x72, 0x69, 0x6E, 0x67,
+                0x21, 0x0A, 0x1E, 0xBB
+            ]
+        );
+    }
+
+    #[test]
+    fn test_deserialize() {
+        let serialized_vec = vec![
+            0xAA, 0x0D, 0xC0, 0x54, 0x65, 0x73, 0x74, 0x20, 0x73, 0x74, 0x72, 0x69, 0x6E, 0x67,
+            0x21, 0x0A, 0x1E, 0xBB,
+        ];
+        let frame = MUFrame::deserialize(&serialized_vec).unwrap();
+        assert_eq!(frame.is_prefix_correct(), true);
+        assert_eq!(frame.is_postfix_correct(), true);
+        assert_eq!(frame.is_crc_valid(0x1E), true);
+        assert_eq!(frame.opcode, MUOpcode::ConsoleMode as u8);
+        assert_eq!(frame.data, b"Test string!\n");
+    }
+
+    #[test]
+    fn test_frame_invalidation() {
+        let serialized_vec = vec![
+            0xAA, 0x0D, 0xC0, 0x54, 0x65, 0x73, 0x74, 0x20, 0x73, 0x74, 0x72, 0x69, 0x6E, 0x67,
+            0x21, 0x0A, 0x1E, 0xBB,
+        ];
+        let frame = MUFrame::deserialize(&serialized_vec).unwrap();
+        assert_eq!(frame.is_prefix_correct(), true);
+        assert_eq!(frame.is_postfix_correct(), true);
+        assert_eq!(frame.is_crc_valid(0x1E), true);
+        assert_eq!(frame.opcode, MUOpcode::ConsoleMode as u8);
+        assert_eq!(frame.data, b"Test string!\n");
+        frame.invalidate_frame().unwrap();
+    }
+}

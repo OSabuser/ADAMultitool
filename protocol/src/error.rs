@@ -1,6 +1,22 @@
 use std::error::Error;
 use std::{fmt, io};
 
+/// Ошибки в формате сообщения
+#[derive(Debug)]
+pub enum FrameDecodeError {
+    /// Некорректная кодировка принятой строки.
+    BadEncoding,
+    BadCRC,
+    BadPrefix,
+    BadPostfix,
+}
+
+impl fmt::Display for FrameDecodeError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
 /// Ошибка отправки сообщения.
 #[derive(Debug)]
 pub enum ProtoSendError {

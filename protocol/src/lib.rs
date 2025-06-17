@@ -1,11 +1,12 @@
 pub mod error;
 pub mod host;
+pub mod mu_frame;
 
 use error::{ProtoRecvError, ProtoSendError};
 use std::io::{Read, Write};
 
 /// Отправляет четыре байта `data.len()`, а потом сами данные.
-fn send_proto_string<Data: AsRef<str>, Writer: Write>(
+fn send_proto_message<Data: AsRef<str>, Writer: Write>(
     data: Data,
     mut writer: Writer,
 ) -> Result<(), ProtoSendError> {
@@ -18,7 +19,7 @@ fn send_proto_string<Data: AsRef<str>, Writer: Write>(
 }
 
 /// Читает четыре байта длины, а потом сами данные.
-fn recv_proto_string<Reader: Read>(mut reader: Reader) -> Result<String, ProtoRecvError> {
+fn recv_proto_message<Reader: Read>(mut reader: Reader) -> Result<String, ProtoRecvError> {
     let mut buf = [0; 4];
     reader.read_exact(&mut buf)?;
     let len = u32::from_be_bytes(buf);
