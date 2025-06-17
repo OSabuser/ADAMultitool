@@ -33,7 +33,7 @@ impl MUFrame {
     }
 
     /// Десериализация данных из буфера
-    pub fn deserialize(data: &[u8]) -> Result<Self, String> {
+    pub fn deserialize(data: &[u8]) -> Result<Self, FrameDecodeError> {
         let mut frame = Self::new();
         frame.prefix = data[0];
         frame.length = data[1];
@@ -41,6 +41,9 @@ impl MUFrame {
         frame.data = data[3..3 + frame.length as usize].to_vec();
         frame.crc = data[3 + frame.length as usize];
         frame.suffix = data[4 + frame.length as usize];
+
+        frame.invalidate_frame()?;
+
         Ok(frame)
     }
 
@@ -56,7 +59,7 @@ impl MUFrame {
         result
     }
 
-    pub fn invalidate_frame(&self) -> Result<(), FrameDecodeError> {
+    fn invalidate_frame(&self) -> Result<(), FrameDecodeError> {
         if !self.is_prefix_correct() {
             return Err(FrameDecodeError::BadPrefix);
         }

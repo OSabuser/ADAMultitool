@@ -48,9 +48,7 @@ impl Error for ProtoSendError {
 /// Ошибка приема сообщения.
 #[derive(Debug)]
 pub enum ProtoRecvError {
-    /// Некорректная кодировка принятой строки.
-    BadEncoding,
-
+    Decode(FrameDecodeError),
     /// Внутренняя ошибка IO.
     Io(io::Error),
 }
@@ -58,7 +56,7 @@ pub enum ProtoRecvError {
 impl fmt::Display for ProtoRecvError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ProtoRecvError::BadEncoding => write!(f, "bad encoding"),
+            ProtoRecvError::Decode(e) => write!(f, "Decode error: {}", e),
             ProtoRecvError::Io(e) => write!(f, "IO error: {}", e),
         }
     }
@@ -74,7 +72,7 @@ impl Error for ProtoRecvError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
             ProtoRecvError::Io(e) => Some(e),
-            ProtoRecvError::BadEncoding => None,
+            _ => None,
         }
     }
 }
