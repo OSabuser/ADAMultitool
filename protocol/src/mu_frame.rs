@@ -4,13 +4,21 @@ use std::fmt::Display;
 const SYNC1: u8 = 0xAA;
 const SYNC2: u8 = 0xBB;
 const MAX_DATA_SIZE: u8 = u8::MAX;
+const CONSOLE_OPCODE: u8 = 0xC0;
 
-#[derive(Debug)]
-enum MUOpcode {
-    ConsoleMode = 0xC0,
-}
+/// Пакет данных протокола "МЮ" и методы работы с ним
+///
+///
+/// ## Пример
+/// ```ignore
+/// let mut frame_to_send = MUFrame::new();
+///       frame_to_send
+///       .set_data(b"get server_info\n".to_vec())?;
+/// let raw_bytes = frame_to_send.serialize();
+/// ```
+///
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct MUFrame {
     prefix: u8,
     length: u8,
@@ -23,13 +31,33 @@ pub struct MUFrame {
 impl MUFrame {
     pub fn new() -> Self {
         Self {
-            prefix: 0,
+            prefix: SYNC1,
             length: 0,
-            opcode: 0,
+            opcode: CONSOLE_OPCODE,
             data: Vec::with_capacity(MAX_DATA_SIZE as usize),
             crc: 0,
-            suffix: 0,
+            suffix: SYNC2,
         }
+    }
+
+    pub fn get_data(&self) -> &Vec<u8> {
+        &self.data
+    }
+
+    pub fn set_data(&mut self, data: Vec<u8>) -> Result<(), FrameDecodeError> {
+        if data.len() > MAX_DATA_SIZE as usize {
+            return Err(FrameDecodeError::BadDataSize);
+        }
+
+        if !data.is_ascii() {
+            return Err(FrameDecodeError::BadEncoding);
+        }
+
+        self.length = data.len() as u8;
+        self.data = data;
+        self.crc = self.calculate_src();
+
+        Ok(())
     }
 
     /// Десериализация данных из буфера
@@ -37,7 +65,10 @@ impl MUFrame {
         let mut frame = Self::new();
         frame.prefix = data[0];
         frame.length = data[1];
-        frame.opcode = data[2] as u8;
+        frame.opcode = data[2];
+
+        // len = 2   data = 3,4
+
         frame.data = data[3..3 + frame.length as usize].to_vec();
         frame.crc = data[3 + frame.length as usize];
         frame.suffix = data[4 + frame.length as usize];
@@ -59,6 +90,7 @@ impl MUFrame {
         result
     }
 
+    /// Проверка валидности фрейма
     fn invalidate_frame(&self) -> Result<(), FrameDecodeError> {
         if !self.is_prefix_correct() {
             return Err(FrameDecodeError::BadPrefix);
@@ -115,12 +147,6 @@ impl Display for MUFrame {
     }
 }
 
-impl Display for MUOpcode {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -128,20 +154,15 @@ mod tests {
     #[test]
     fn test_check_crc_calculation() {
         let mut frame = MUFrame::new();
-        frame.opcode = MUOpcode::ConsoleMode as u8;
-        frame.data = b"Hello, server!\n".to_vec();
+        frame.set_data(b"Hello, server!\n".to_vec()).unwrap();
         assert_eq!(frame.is_crc_valid(0xBD), true);
     }
 
     #[test]
     fn test_serialize() {
         let mut frame = MUFrame::new();
-        frame.prefix = SYNC1;
-        frame.opcode = MUOpcode::ConsoleMode as u8;
-        frame.data = b"Test string!\n".to_vec();
-        frame.length = frame.data.len() as u8;
-        frame.crc = frame.calculate_src();
-        frame.suffix = SYNC2;
+
+        frame.set_data(b"Test string!\n".to_vec()).unwrap();
 
         let serialized_vec = frame.serialize();
         assert_eq!(serialized_vec.len(), 5 + frame.length as usize);
@@ -165,7 +186,7 @@ mod tests {
         assert_eq!(frame.is_prefix_correct(), true);
         assert_eq!(frame.is_postfix_correct(), true);
         assert_eq!(frame.is_crc_valid(0x1E), true);
-        assert_eq!(frame.opcode, MUOpcode::ConsoleMode as u8);
+        assert_eq!(frame.opcode, CONSOLE_OPCODE);
         assert_eq!(frame.data, b"Test string!\n");
     }
 
@@ -179,7 +200,7 @@ mod tests {
         assert_eq!(frame.is_prefix_correct(), true);
         assert_eq!(frame.is_postfix_correct(), true);
         assert_eq!(frame.is_crc_valid(0x1E), true);
-        assert_eq!(frame.opcode, MUOpcode::ConsoleMode as u8);
+        assert_eq!(frame.opcode, CONSOLE_OPCODE);
         assert_eq!(frame.data, b"Test string!\n");
         frame.invalidate_frame().unwrap();
     }

@@ -1,78 +1,35 @@
-use std::error::Error;
-use std::{fmt, io};
+use std::io;
+use thiserror::Error;
 
 /// Ошибки в формате сообщения
-#[derive(Debug)]
+#[derive(Error, PartialEq, Debug)]
 pub enum FrameDecodeError {
-    /// Некорректная кодировка принятой строки.
+    #[error("Bad payload size")]
+    BadDataSize,
+    #[error("Bad payload decoding")]
     BadEncoding,
+    #[error("Bad frame CRC")]
     BadCRC,
+    #[error("Bad frame prefix")]
     BadPrefix,
+    #[error("Bad frame postfix")]
     BadPostfix,
 }
 
-impl fmt::Display for FrameDecodeError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
-/// Ошибка отправки сообщения.
-#[derive(Debug)]
-pub enum ProtoSendError {
+/// Ошибка приема сообщения.
+#[derive(Error, Debug)]
+pub enum ProtoRecvError {
+    #[error("Failed to decode message")]
+    Decode(#[from] FrameDecodeError),
     /// Внутренняя ошибка IO.
-    Io(io::Error),
-}
-
-impl fmt::Display for ProtoSendError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Io(e) => write!(f, "IO error: {}", e),
-        }
-    }
-}
-
-impl From<io::Error> for ProtoSendError {
-    fn from(value: io::Error) -> Self {
-        Self::Io(value)
-    }
-}
-
-impl Error for ProtoSendError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        let Self::Io(e) = self;
-        Some(e)
-    }
+    #[error("Internal IO error")]
+    Io(#[from] io::Error),
 }
 
 /// Ошибка приема сообщения.
-#[derive(Debug)]
-pub enum ProtoRecvError {
-    Decode(FrameDecodeError),
+#[derive(Error, Debug)]
+pub enum ProtoSendError {
     /// Внутренняя ошибка IO.
-    Io(io::Error),
-}
-
-impl fmt::Display for ProtoRecvError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            ProtoRecvError::Decode(e) => write!(f, "Decode error: {}", e),
-            ProtoRecvError::Io(e) => write!(f, "IO error: {}", e),
-        }
-    }
-}
-
-impl From<io::Error> for ProtoRecvError {
-    fn from(value: io::Error) -> Self {
-        Self::Io(value)
-    }
-}
-
-impl Error for ProtoRecvError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        match self {
-            ProtoRecvError::Io(e) => Some(e),
-            _ => None,
-        }
-    }
+    #[error("Internal IO error")]
+    Io(#[from] io::Error),
 }
