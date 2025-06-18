@@ -1,6 +1,6 @@
 pub mod error;
 pub mod host;
-mod mu_frame;
+pub mod mu_frame;
 
 use crate::{error::FrameDecodeError, mu_frame::MUFrame};
 use error::{ProtoRecvError, ProtoSendError};

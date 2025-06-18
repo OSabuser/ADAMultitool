@@ -55,15 +55,22 @@ impl SerialInterface {
 
     /// Очистка входного буфера приемника
     pub fn clear_input_buffer(&mut self) -> Result<(), String> {
-        if let Ok(_) = self.port_instance.clear(serialport::ClearBuffer::All) {
+        if let Ok(_) = self.port_instance.clear(serialport::ClearBuffer::Input) {
             return Ok(());
         }
         return Err(format!("Failed to clear input buffer: {}", self.port_name));
     }
 
+    pub fn get_available_bytes(&mut self) -> Result<u32, String> {
+        if let Ok(bytes) = self.port_instance.bytes_to_read() {
+            return Ok(bytes);
+        }
+        return Err(format!("Failed to get available bytes: {}", self.port_name));
+    }
+
     /// Чтение данных от интерфейсной платы
     pub fn read_data(&mut self, data: &mut [u8]) -> Result<(), String> {
-        if let Ok(_) = self.port_instance.read_exact(data) {
+        if let Ok(_) = self.port_instance.read(data) {
             return Ok(());
         }
         return Err("Timeout has been reached".to_string());
