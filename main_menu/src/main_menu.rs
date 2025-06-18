@@ -22,20 +22,20 @@ pub enum MainMenuStates {
 pub fn show_main_dialog(config: &mut PortConfig) -> Result<MainMenuStates, String> {
     // Создание структуры главного меню
     let main_menu = menu(vec![
-        label("----------------------").colorize(Color::DarkYellow),
+        label("----------------------").colorize(Color::DarkGreen),
         label(format!(
             "{} v{}",
             env!("CARGO_CRATE_NAME"),
             env!("CARGO_PKG_VERSION")
         ))
-        .colorize(Color::DarkYellow),
-        label(format!("{}", env!("CARGO_PKG_AUTHORS"))).colorize(Color::DarkYellow),
-        label("MU LLC, 2025").colorize(Color::DarkYellow),
-        label("-----------------------").colorize(Color::DarkYellow),
+        .colorize(Color::Green),
+        label(format!("{}", env!("CARGO_PKG_AUTHORS"))).colorize(Color::Green),
+        label("MU LLC, 2025").colorize(Color::DarkGreen),
+        label("-----------------------").colorize(Color::Green),
         label("Текущая конфигурация порта").colorize(Color::DarkGreen),
         label(format!("Порт: {}", config.get_port_name())).colorize(Color::DarkGreen),
         label(format!("Скорость: {}", config.get_baud_rate())).colorize(Color::DarkGreen),
-        label("-----------------------").colorize(Color::DarkYellow),
+        label("-----------------------").colorize(Color::Green),
         back_button(MAIN_MENU_MEMBERS[0]),
         back_button(MAIN_MENU_MEMBERS[1]),
         back_button(MAIN_MENU_MEMBERS[2]),

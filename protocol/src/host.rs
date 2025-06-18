@@ -1,5 +1,5 @@
+use crate::{error::DeviceConnectError, error::ProtoRecvError, error::ProtoSendError};
 use crate::{error::FrameDecodeError, mu_frame::MUFrame};
-use crate::{error::ProtoRecvError, error::ProtoSendError};
 use std::time::Duration;
 
 pub struct HostClient {
@@ -19,9 +19,19 @@ impl HostClient {
         Ok(HostClient { serial_port })
     }
 
-    fn try_handshake(&self) -> Result<Self, serialport::Error> {
+    fn try_handshake(
+        mut instance: Box<dyn serialport::SerialPort + 'static>,
+    ) -> Result<Self, serialport::Error> {
         let mut frame = MUFrame::new();
-        frame.set_data(b"Host: Hi!\n".to_vec()).unwrap();
-        crate::send_proto_message(frame, &mut self.serial_port).unwrap();
+        frame.set_data(b"hello\n".to_vec()).unwrap();
+        crate::send_proto_message(frame, &mut instance).unwrap();
+
+        let buf = Vec::new();
+
+        let answer = crate::recv_proto_message(&buf[..]).unwrap();
+
+        Ok(Self {
+            serial_port: instance,
+        })
     }
 }

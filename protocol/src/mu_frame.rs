@@ -44,6 +44,7 @@ impl MUFrame {
         &self.data
     }
 
+    /// Загрузка данных в фрейм, вычисление CRC и длины
     pub fn set_data(&mut self, data: Vec<u8>) -> Result<(), FrameDecodeError> {
         if data.len() > MAX_DATA_SIZE as usize {
             return Err(FrameDecodeError::BadDataSize);

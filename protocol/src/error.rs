@@ -33,3 +33,10 @@ pub enum ProtoSendError {
     #[error("Internal IO error")]
     Io(#[from] io::Error),
 }
+
+/// Ошибка обмена данными с устройством
+#[derive(Error, Debug)]
+pub enum DeviceConnectError {
+    #[error("Bad handshake!")]
+    BadHandshake,
+}
