@@ -1,13 +1,14 @@
 mod main_menu;
 
-use communication::serial_config::PortConfig as serial_config;
+use communication::serial_config::PortConfig;
 use main_menu::{MainMenuStates, show_main_dialog};
+use misc::config::ConfigIO;
 
 fn main() -> Result<(), String> {
-    let mut config = serial_config::new();
+    let mut port_config = PortConfig::create_default_config()?;
 
     loop {
-        match show_main_dialog(&mut config) {
+        match show_main_dialog(&mut port_config) {
             Ok(MainMenuStates::ConfigurationState) => {
                 continue;
             }

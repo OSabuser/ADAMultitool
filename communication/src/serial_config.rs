@@ -35,7 +35,7 @@ impl PortConfig {
     }
 
     /// Сохранение конфигурации порта в файл
-    pub fn save_config_into_file_with_name(&self, name: &str) -> Result<(), String> {
+    fn save_config_into_file_with_name(&self, name: &str) -> Result<(), String> {
         let mut config_instance = Ini::new();
 
         config_instance.set("serial_settings", "PORT_NAME", Some(self.get_port_name()));
@@ -50,7 +50,7 @@ impl PortConfig {
     }
 
     /// Загрузка конфигурации порта из файла
-    pub fn load_config_from_file_with_name(&mut self, name: &str) -> Result<(), String> {
+    fn load_config_from_file_with_name(&mut self, name: &str) -> Result<(), String> {
         let mut config_instance = Ini::new();
         config_instance.load(format!("configs/serial/{}.ini", name))?;
 
@@ -69,6 +69,28 @@ impl PortConfig {
 }
 
 impl ConfigIO for PortConfig {
+    fn create_default_config() -> Result<Self, String> {
+        let config = PortConfig::new("default");
+        config.save_parameters()?;
+        Ok(config)
+    }
+
+    fn change_config_name(&mut self, name: &str) -> Result<(), String> {
+        if name.is_empty() {
+            return Err("Name should not be empty".into());
+        }
+
+        if name
+            .chars()
+            .all(|arg0: char| char::is_ascii_alphanumeric(&arg0))
+        {
+            self.config_name = name.to_string();
+            return Ok(());
+        }
+
+        Err("Name should be alphanumeric".into())
+    }
+
     fn load_parameters(&mut self) -> Result<(), String> {
         self.load_config_from_file_with_name(&self.config_name.clone())?;
         Ok(())
@@ -79,7 +101,7 @@ impl ConfigIO for PortConfig {
         Ok(())
     }
 
-    fn get_existing_config_names() -> Result<Vec<String>, String> {
+    fn list_existing_configs() -> Result<Vec<String>, String> {
         let mut list_of_files = Vec::new();
 
         if let Ok(entries) = fs::read_dir("configs/serial/") {

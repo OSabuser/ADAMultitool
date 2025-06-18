@@ -3,6 +3,7 @@ use communication::serial_port::SerialInterface;
 use crossterm::style::Color;
 use inquire::validator::Validation;
 use inquire::{Confirm, Select, Text};
+use misc::config::ConfigIO;
 use terminal_menu::{back_button, button, label, menu, mut_menu, run};
 
 const MAIN_MENU_ITEMS: usize = 4;
@@ -71,20 +72,25 @@ fn show_port_config_dialog(config: &mut PortConfig) -> Result<(), String> {
     config.set_baud_rate(baud_selection);
 
     if show_save_config_dialog() {
+        // set_name -> save_config
         let filename = show_get_filename_dialog()?;
-        config.save_config_into_file_with_name(&filename)?;
+        config.change_config_name(&filename)?;
+        config.save_parameters()?;
     }
 
     return Ok(());
 }
 
 fn show_load_config_dialog(config: &mut PortConfig) -> Result<(), String> {
-    let config_files = config.get_existing_config_names()?;
+    let config_files = PortConfig::list_existing_configs()?;
 
     if config_files.len() > 0 {
         let answer = Select::new("Выбор конфигурации", config_files).prompt();
         match answer {
-            Ok(selection) => config.load_config_from_file_with_name(&selection.clone())?,
+            Ok(selection) => {
+                config.change_config_name(&selection.clone())?;
+                config.load_parameters()?
+            }
             Err(e) => return Err(e.to_string()),
         }
     }
