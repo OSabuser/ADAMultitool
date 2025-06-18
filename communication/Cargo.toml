@@ -1,9 +1,10 @@
 [package]
-name = "misc"
+name = "communication"
 version = "0.1.0"
 edition = "2024"
 authors.workspace = true
 
 [dependencies]
+misc = { path = "../misc" }
 configparser = {workspace = true}
 serialport = "4.7.2"

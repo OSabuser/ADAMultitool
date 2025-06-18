@@ -4,7 +4,13 @@ pub mod mu_frame;
 
 use crate::{error::FrameDecodeError, mu_frame::MUFrame};
 use error::{ProtoRecvError, ProtoSendError};
-use std::io::{Read, Write};
+use std::{
+    io::{Read, Write},
+    thread,
+};
+
+/// Задержка приема ответа
+const ANSWER_DELAY_MS: u64 = 150;
 
 /// Отправка сообщения
 fn send_proto_message<Writer: Write>(
@@ -19,25 +25,16 @@ fn send_proto_message<Writer: Write>(
 
 /// Прием сообщения
 fn recv_proto_message<Reader: Read>(mut reader: Reader) -> Result<MUFrame, ProtoRecvError> {
-    let mut raw_message = Vec::new();
+    let mut read_buffer = [0; 256];
 
-    // Чтение prefix, len & opcode
-    let mut buf = [0; 3];
-    reader.read_exact(&mut buf)?;
-    let payload_length = buf[1] + 1 as u8;
-    raw_message.append(&mut buf.to_vec());
+    thread::sleep(std::time::Duration::from_millis(ANSWER_DELAY_MS));
 
-    // Чтение payload
-    let mut buf = vec![0; payload_length as _];
-    reader.read_exact(&mut buf)?;
-    raw_message.append(&mut buf.to_vec());
+    // Чтение отклика от интерфейсной платы
+    reader.read(&mut read_buffer)?;
 
-    // Чтение crc & postfix
-    let mut buf = [0; 1];
-    reader.read_exact(&mut buf)?;
-    raw_message.append(&mut buf.to_vec());
+    todo!("Парсинг принятых байт");
 
-    Ok(MUFrame::deserialize(&raw_message).map_err(FrameDecodeError::from)?)
+    Ok(MUFrame::deserialize(&read_buffer).map_err(FrameDecodeError::from)?)
 }
 
 #[cfg(test)]

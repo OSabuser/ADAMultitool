@@ -5,6 +5,7 @@ edition = "2024"
 authors.workspace = true
 
 [dependencies]
+log = { workspace = true }
 crc = "3.3.0"
 thiserror = { workspace = true }
 serialport = "4.7.2"

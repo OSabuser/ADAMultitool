@@ -151,12 +151,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "communication"
+version = "0.1.0"
+dependencies = [
+ "configparser",
+ "misc",
+ "serialport",
+]
+
+[[package]]
 name = "config_utility"
 version = "0.1.0"
 dependencies = [
+ "configparser",
  "env_logger",
  "log",
  "misc",
+ "protocol",
 ]
 
 [[package]]
@@ -422,6 +433,7 @@ name = "main_menu"
 version = "0.1.0"
 dependencies = [
  "colored",
+ "communication",
  "crossterm",
  "inquire",
  "misc",
@@ -553,6 +565,7 @@ name = "protocol"
 version = "0.1.0"
 dependencies = [
  "crc",
+ "log",
  "serialport",
  "thiserror",
 ]

@@ -5,6 +5,7 @@ edition = "2024"
 authors.workspace = true
 
 [dependencies]
+communication = { path = "../communication" }
 misc = { path = "../misc" }
 inquire = { version = "0.7.5", features = ["date"] }
 colored = "3.0.0"

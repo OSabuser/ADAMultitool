@@ -1,8 +1,8 @@
+use communication::serial_config::PortConfig;
+use communication::serial_port::SerialInterface;
 use crossterm::style::Color;
 use inquire::validator::Validation;
 use inquire::{Confirm, Select, Text};
-use misc::serial_config::PortConfig;
-use misc::serial_port::SerialInterface;
 use terminal_menu::{back_button, button, label, menu, mut_menu, run};
 
 const MAIN_MENU_ITEMS: usize = 4;
@@ -72,19 +72,19 @@ fn show_port_config_dialog(config: &mut PortConfig) -> Result<(), String> {
 
     if show_save_config_dialog() {
         let filename = show_get_filename_dialog()?;
-        config.save_config_into_file(&filename)?;
+        config.save_config_into_file_with_name(&filename)?;
     }
 
     return Ok(());
 }
 
 fn show_load_config_dialog(config: &mut PortConfig) -> Result<(), String> {
-    let config_files = PortConfig::get_existing_config_names()?;
+    let config_files = config.get_existing_config_names()?;
 
     if config_files.len() > 0 {
         let answer = Select::new("Выбор конфигурации", config_files).prompt();
         match answer {
-            Ok(selection) => config.load_config_from_file(&selection)?,
+            Ok(selection) => config.load_config_from_file_with_name(&selection.clone())?,
             Err(e) => return Err(e.to_string()),
         }
     }

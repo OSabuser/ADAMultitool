@@ -68,8 +68,6 @@ impl MUFrame {
         frame.length = data[1];
         frame.opcode = data[2];
 
-        // len = 2   data = 3,4
-
         frame.data = data[3..3 + frame.length as usize].to_vec();
         frame.crc = data[3 + frame.length as usize];
         frame.suffix = data[4 + frame.length as usize];
