@@ -4,7 +4,7 @@ use std::time::Duration;
 const SUPPORTED_BAUDATES: [u32; 5] = [9600, 19200, 38400, 57600, 115200];
 
 pub struct SerialInterface {
-    port_instance: Box<dyn serialport::SerialPort + 'static>,
+    pub port_instance: Box<dyn serialport::SerialPort + 'static>,
     port_name: String,
 }
 

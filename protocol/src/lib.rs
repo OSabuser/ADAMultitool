@@ -1,40 +1,57 @@
-pub mod error;
 pub mod host;
 pub mod mu_frame;
 
-use crate::{error::FrameDecodeError, mu_frame::MUFrame};
-use error::{ProtoRecvError, ProtoSendError};
+use crate::mu_frame::MUFrame;
+use log::{debug, error, info};
 use std::{
     io::{Read, Write},
     thread,
 };
 
 /// Задержка приема ответа
-const ANSWER_DELAY_MS: u64 = 150;
+const ANSWER_DELAY_MS: u64 = 500;
 
 /// Отправка сообщения
-fn send_proto_message<Writer: Write>(
-    data: MUFrame,
-    mut writer: Writer,
-) -> Result<(), ProtoSendError> {
+fn send_proto_message<Writer: Write>(data: MUFrame, mut writer: Writer) -> Result<(), String> {
     let bytes = data.serialize();
-    writer.write_all(&bytes)?;
+    writer.write_all(&bytes).map_err(|e| e.to_string())?;
 
     Ok(())
 }
 
 /// Прием сообщения
-fn recv_proto_message<Reader: Read>(mut reader: Reader) -> Result<MUFrame, ProtoRecvError> {
+fn recv_proto_message<Reader: Read>(mut reader: Reader) -> Result<MUFrame, String> {
+    let mut raw_frame = Vec::new();
     let mut read_buffer = [0; 256];
 
     thread::sleep(std::time::Duration::from_millis(ANSWER_DELAY_MS));
 
     // Чтение отклика от интерфейсной платы
-    reader.read(&mut read_buffer)?;
+    reader.read(&mut read_buffer).map_err(|e| e.to_string())?;
 
-    todo!("Парсинг принятых байт");
+    debug!("Received: {:?}", read_buffer);
 
-    Ok(MUFrame::deserialize(&read_buffer).map_err(FrameDecodeError::from)?)
+    let prefix = read_buffer[0];
+    raw_frame.push(prefix);
+
+    let payload_length = read_buffer[1] as u8;
+    raw_frame.push(payload_length);
+
+    let opcode = read_buffer[2];
+    raw_frame.push(opcode);
+
+    let payload = &read_buffer[3..3 + payload_length as usize];
+    raw_frame.extend_from_slice(payload);
+
+    let crc = read_buffer[3 + payload_length as usize];
+    raw_frame.push(crc);
+
+    let postfix = read_buffer[4 + payload_length as usize];
+    raw_frame.push(postfix);
+
+    debug!("Raw frame: {:?}", raw_frame);
+
+    Ok(MUFrame::deserialize(&raw_frame).map_err(|e| e.to_string())?)
 }
 
 #[cfg(test)]

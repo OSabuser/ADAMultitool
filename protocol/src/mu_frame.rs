@@ -1,4 +1,3 @@
-use crate::error::FrameDecodeError;
 use std::fmt::Display;
 
 const SYNC1: u8 = 0xAA;
@@ -45,13 +44,13 @@ impl MUFrame {
     }
 
     /// Загрузка данных в фрейм, вычисление CRC и длины
-    pub fn set_data(&mut self, data: Vec<u8>) -> Result<(), FrameDecodeError> {
-        if data.len() > MAX_DATA_SIZE as usize {
-            return Err(FrameDecodeError::BadDataSize);
+    pub fn set_data(&mut self, data: Vec<u8>) -> Result<(), String> {
+        if data.len() > MAX_DATA_SIZE as usize || data.is_empty() {
+            return Err("Data too long".to_string());
         }
 
         if !data.is_ascii() {
-            return Err(FrameDecodeError::BadEncoding);
+            return Err("Bad encoding".to_string());
         }
 
         self.length = data.len() as u8;
@@ -62,7 +61,7 @@ impl MUFrame {
     }
 
     /// Десериализация данных из буфера
-    pub fn deserialize(data: &[u8]) -> Result<Self, FrameDecodeError> {
+    pub fn deserialize(data: &[u8]) -> Result<Self, String> {
         let mut frame = Self::new();
         frame.prefix = data[0];
         frame.length = data[1];
@@ -90,19 +89,19 @@ impl MUFrame {
     }
 
     /// Проверка валидности фрейма
-    fn invalidate_frame(&self) -> Result<(), FrameDecodeError> {
+    fn invalidate_frame(&self) -> Result<(), String> {
         if !self.is_prefix_correct() {
-            return Err(FrameDecodeError::BadPrefix);
+            return Err("Bad prefix".to_string());
         }
         if !self.is_postfix_correct() {
-            return Err(FrameDecodeError::BadPostfix);
+            return Err("Bad postfix".to_string());
         }
         if !self.is_crc_valid(self.crc) {
-            return Err(FrameDecodeError::BadCRC);
+            return Err("Bad CRC".to_string());
         }
 
         if !self.data.is_ascii() {
-            return Err(FrameDecodeError::BadEncoding);
+            return Err("Bad encoding".to_string());
         }
 
         Ok(())
