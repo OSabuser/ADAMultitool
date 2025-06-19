@@ -1,5 +1,3 @@
-// Assumes the binary is main:
-
 // $ RUST_LOG=[log_level] ./executable
 pub mod device_config;
 
@@ -10,7 +8,7 @@ use misc::config::ConfigIO;
 fn main() {
     env_logger::init();
 
-    let mut config = DeviceConfig::new("tests");
+    let mut config = DeviceConfig::create_default_config().unwrap();
 
     config
         .load_parameters()

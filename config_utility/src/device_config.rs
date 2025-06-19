@@ -17,16 +17,6 @@ pub struct DeviceConfig {
 }
 
 impl DeviceConfig {
-    pub fn new(config_path: &str) -> Self {
-        Self {
-            config_name: config_path.to_string(),
-            group_number: 0,
-            music_volume_idx: 0,
-            sound_volume_idx: 2,
-            load_capacity_idx: 0,
-        }
-    }
-
     pub fn get_group_number(&self) -> u8 {
         self.group_number
     }
@@ -90,41 +80,58 @@ impl DeviceConfig {
         self.load_capacity_idx = load_capacity_idx;
         Ok(())
     }
+}
 
-    /// Сохранение конфигурации устройства в новый файл с заданным названием
-    pub fn save_config_into_file_with_name(&self, name: &str) -> Result<(), String> {
-        let mut config_instance = Ini::new();
-
-        config_instance.set(
-            "device_settings",
-            "GROUP_NUMBER",
-            Some(self.get_group_number().to_string()),
-        );
-        config_instance.set(
-            "device_settings",
-            "MUSIC_VOLUME_IDX",
-            Some(self.get_music_volume_idx().to_string()),
-        );
-        config_instance.set(
-            "device_settings",
-            "SOUND_VOLUME_IDX",
-            Some(self.get_sound_volume_idx().to_string()),
-        );
-        config_instance.set(
-            "device_settings",
-            "LOAD_CAPACITY_IDX",
-            Some(self.get_load_capacity_idx().to_string()),
-        );
-
-        return config_instance
-            .write(format!("configs/serial/{}.ini", name))
-            .map_err(|e| e.to_string());
+impl ConfigIO for DeviceConfig {
+    fn create_default_config() -> Result<Self, String> {
+        let config = Self {
+            config_name: "default".to_string(),
+            group_number: 0,
+            music_volume_idx: 0,
+            sound_volume_idx: 2,
+            load_capacity_idx: 0,
+        };
+        config.save_parameters()?;
+        Ok(config)
     }
 
-    /// Загрузка конфигурации устройства из файла с заданным названием
-    pub fn load_config_from_file_with_name(&mut self, name: &str) -> Result<(), String> {
+    fn create_from_existing_config(name: &str) -> Result<Self, String>
+    where
+        Self: Sized,
+    {
+        let mut config = Self {
+            config_name: name.to_string(),
+            group_number: 0,
+            music_volume_idx: 0,
+            sound_volume_idx: 2,
+            load_capacity_idx: 0,
+        };
+        config.load_parameters()?;
+        Ok(config)
+    }
+
+    fn get_actual_config_name(&self) -> String {
+        self.config_name.clone()
+    }
+
+    fn change_config_name(&mut self, name: &str) -> Result<(), String> {
+        if name.is_empty() {
+            return Err("Name should not be empty".into());
+        }
+
+        if name
+            .chars()
+            .all(|arg0: char| char::is_ascii_alphanumeric(&arg0))
+        {
+            self.config_name = name.to_string();
+            return Ok(());
+        }
+
+        Err("Name should be alphanumeric".into())
+    }
+    fn load_parameters(&mut self) -> Result<(), String> {
         let mut config_instance = Ini::new();
-        config_instance.load(format!("configs/device/{}.ini", name))?;
+        config_instance.load(format!("configs/device/{}.ini", self.config_name))?;
 
         match config_instance.getuint("device_settings", "GROUP_NUMBER") {
             Ok(Some(group_number)) => self
@@ -156,41 +163,34 @@ impl DeviceConfig {
 
         Ok(())
     }
-}
-
-impl ConfigIO for DeviceConfig {
-    fn create_default_config() -> Result<Self, String> {
-        let config = DeviceConfig::new("default");
-        config.save_parameters()?;
-        Ok(config)
-    }
-
-    fn change_config_name(&mut self, name: &str) -> Result<(), String> {
-        if name.is_empty() {
-            return Err("Name should not be empty".into());
-        }
-
-        if name
-            .chars()
-            .all(|arg0: char| char::is_ascii_alphanumeric(&arg0))
-        {
-            self.config_name = name.to_string();
-            return Ok(());
-        }
-
-        Err("Name should be alphanumeric".into())
-    }
-    fn load_parameters(&mut self) -> Result<(), String> {
-        self.load_config_from_file_with_name(&self.config_name.clone())?;
-        Ok(())
-    }
 
     fn save_parameters(&self) -> Result<(), String> {
-        // Call the method that does the actual work
-        self.save_config_into_file_with_name(&self.config_name.clone())?;
+        let mut config_instance = Ini::new();
 
-        // If we got here, everything worked, so return Ok(())
-        Ok(())
+        config_instance.set(
+            "device_settings",
+            "GROUP_NUMBER",
+            Some(self.get_group_number().to_string()),
+        );
+        config_instance.set(
+            "device_settings",
+            "MUSIC_VOLUME_IDX",
+            Some(self.get_music_volume_idx().to_string()),
+        );
+        config_instance.set(
+            "device_settings",
+            "SOUND_VOLUME_IDX",
+            Some(self.get_sound_volume_idx().to_string()),
+        );
+        config_instance.set(
+            "device_settings",
+            "LOAD_CAPACITY_IDX",
+            Some(self.get_load_capacity_idx().to_string()),
+        );
+
+        return config_instance
+            .write(format!("configs/serial/{}.ini", self.config_name))
+            .map_err(|e| e.to_string());
     }
     fn list_existing_configs() -> Result<Vec<String>, String> {
         let mut list_of_files = Vec::new();
