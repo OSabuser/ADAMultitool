@@ -1,3 +1,5 @@
+use core::error;
+use log::error;
 use std::fmt::Display;
 
 const SYNC1: u8 = 0xAA;

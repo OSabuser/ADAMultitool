@@ -1,4 +1,4 @@
-use log::info;
+use log::{info, warn};
 
 use crate::mu_frame::MUFrame;
 use std::time::Duration;
@@ -8,6 +8,7 @@ pub struct HostClient {
 }
 
 impl HostClient {
+    /// Подключение к устройству
     pub fn connect(
         port_name: &str,
         baudrate: u32,
@@ -21,6 +22,7 @@ impl HostClient {
         Self::try_handshake(serial_port)
     }
 
+    /// Попытка установить соединение с устройством
     fn try_handshake(
         mut instance: Box<dyn serialport::SerialPort + 'static>,
     ) -> Result<Self, String> {
@@ -39,7 +41,7 @@ impl HostClient {
         let string_data =
             String::from_utf8(answer.get_data().to_vec()).map_err(|e| e.to_string())?;
 
-        info!("Received response: {}", string_data);
+        warn!("Received response: {}", string_data);
 
         if answer.get_data() != b"Hi!\r\n" {
             return Err("Handshake failed!".to_string());
@@ -50,6 +52,7 @@ impl HostClient {
         })
     }
 
+    /// Отправка запроса на устройство
     pub fn send_request(&mut self, request: &str) -> Result<String, String> {
         let mut frame = MUFrame::new();
         frame
@@ -57,7 +60,9 @@ impl HostClient {
             .map_err(|e| e.to_string())?;
         crate::send_proto_message(frame, &mut self.serial_port)?;
 
-        let frame = crate::recv_proto_message(&mut self.serial_port).map_err(|e| e.to_string())?;
-        Ok(String::from_utf8(frame.get_data().to_vec()).map_err(|e| e.to_string())?)
+        let new_frame =
+            crate::recv_proto_message(&mut self.serial_port).map_err(|e| e.to_string())?;
+
+        Ok(String::from_utf8(new_frame.get_data().to_vec()).map_err(|e| e.to_string())?)
     }
 }

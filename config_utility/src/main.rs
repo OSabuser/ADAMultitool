@@ -5,35 +5,42 @@
 // $env:RUST_LOG="trace"
 // ./executable
 pub mod device_config;
+pub mod protocol_client;
 
 use communication::serial_config::PortConfig;
-use log::{debug, error, info, trace, warn};
+use log::{debug, info};
 use misc::config::ConfigIO;
-use protocol::host::HostClient;
+use protocol_client::MUClient;
+
+use crate::device_config::{GroupNumber, LoadCapacityIdx, MusicVolumeIdx, SoundVolumeIdx};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
 
     let port_config = PortConfig::create_from_existing_config("pizero")?;
 
-    debug!(
-        "Loaded port config parameters are: {}, {}",
-        port_config.get_port_name(),
-        port_config.get_baud_rate()
-    );
+    let mut device_config = device_config::DeviceConfig::create_from_existing_config("pi0config")?;
 
-    let mut client = HostClient::connect(
-        port_config.get_port_name().as_str(),
-        port_config.get_baud_rate(),
-        std::time::Duration::from_millis(5000),
-    )
-    .unwrap();
+    debug!("#1 Local device config: {}", device_config);
 
-    info!("Connected to device!");
+    let mut client = MUClient::new(&port_config)?;
 
-    let response = client.send_request("set mode 2").unwrap();
+    client.get_settings_from_device(&mut device_config)?;
 
-    info!("Received response: {}", response);
+    device_config.set_group_number(GroupNumber(0))?;
+
+    device_config.set_music_volume_idx(MusicVolumeIdx(0))?;
+
+    device_config.set_sound_volume_idx(SoundVolumeIdx(2))?;
+
+    device_config.set_load_capacity_idx(LoadCapacityIdx(0))?;
+
+    client.push_settings_to_device(&device_config)?;
+
+    client.get_settings_from_device(&mut device_config)?;
+
+    let response = client.start_data_streaming()?;
+    info!("Start data streaming: {}", response);
 
     Ok(())
 }

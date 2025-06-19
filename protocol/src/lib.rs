@@ -2,7 +2,7 @@ pub mod host;
 pub mod mu_frame;
 
 use crate::mu_frame::MUFrame;
-use log::{debug, error, info};
+use log::{debug, error, info, trace}; //debug;
 use std::{
     io::{Read, Write},
     thread,
@@ -29,8 +29,6 @@ fn recv_proto_message<Reader: Read>(mut reader: Reader) -> Result<MUFrame, Strin
     // Чтение отклика от интерфейсной платы
     reader.read(&mut read_buffer).map_err(|e| e.to_string())?;
 
-    debug!("Received: {:?}", read_buffer);
-
     let prefix = read_buffer[0];
     raw_frame.push(prefix);
 
@@ -48,8 +46,6 @@ fn recv_proto_message<Reader: Read>(mut reader: Reader) -> Result<MUFrame, Strin
 
     let postfix = read_buffer[4 + payload_length as usize];
     raw_frame.push(postfix);
-
-    debug!("Raw frame: {:?}", raw_frame);
 
     Ok(MUFrame::deserialize(&raw_frame).map_err(|e| e.to_string())?)
 }

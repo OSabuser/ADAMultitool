@@ -2,6 +2,9 @@ use configparser::ini::Ini;
 use misc::config::ConfigIO;
 use std::fs;
 
+// TODO: TIMEOUT
+// TODO: from, newtype pattern, tests
+
 #[derive(Debug, Clone)]
 pub struct PortConfig {
     config_name: String,
