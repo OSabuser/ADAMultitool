@@ -1,4 +1,4 @@
-pub mod host;
+pub mod client;
 pub mod mu_frame;
 
 use crate::mu_frame::MUFrame;
@@ -16,6 +16,9 @@ fn send_proto_message<Writer: Write>(data: MUFrame, mut writer: Writer) -> Resul
     let bytes = data.serialize();
     writer.write_all(&bytes).map_err(|e| e.to_string())?;
 
+    // Время для составления ответа
+    thread::sleep(std::time::Duration::from_millis(ANSWER_DELAY_MS));
+
     Ok(())
 }
 
@@ -23,8 +26,6 @@ fn send_proto_message<Writer: Write>(data: MUFrame, mut writer: Writer) -> Resul
 fn recv_proto_message<Reader: Read>(mut reader: Reader) -> Result<MUFrame, String> {
     let mut raw_frame = Vec::new();
     let mut read_buffer = [0; 256];
-
-    thread::sleep(std::time::Duration::from_millis(ANSWER_DELAY_MS));
 
     // Чтение отклика от интерфейсной платы
     reader.read(&mut read_buffer).map_err(|e| e.to_string())?;

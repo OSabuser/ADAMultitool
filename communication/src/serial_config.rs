@@ -1,6 +1,6 @@
 use configparser::ini::Ini;
 use misc::config::ConfigIO;
-use std::fs;
+use std::{fmt::Display, fs};
 
 // TODO: TIMEOUT
 // TODO: from, newtype pattern, tests
@@ -13,14 +13,6 @@ pub struct PortConfig {
 }
 
 impl PortConfig {
-    pub fn new(config_path: &str) -> PortConfig {
-        PortConfig {
-            config_name: config_path.to_string(),
-            port_name: "COM1".to_string(),
-            baud_rate: 9600,
-        }
-    }
-
     pub fn get_port_name(&self) -> String {
         self.port_name.clone()
     }
@@ -39,43 +31,31 @@ impl PortConfig {
 }
 
 impl ConfigIO for PortConfig {
-    fn create_default_config() -> Result<Self, String> {
-        let config = PortConfig::new("default");
-        config.save_parameters()?;
+    fn create_new(name: &str) -> Result<Self, String> {
+        let config = Self {
+            config_name: name.to_string(),
+            port_name: "/dev/ttyAMA0".to_string(),
+            baud_rate: 9600,
+        };
+        //config.save_parameters()?;
         Ok(config)
     }
 
-    fn create_from_existing_config(name: &str) -> Result<Self, String>
+    fn get_config_name(&self) -> String {
+        self.config_name.clone()
+    }
+
+    fn create_from_existing(name: &str) -> Result<Self, String>
     where
         Self: Sized,
     {
         let mut config = Self {
             config_name: name.to_string(),
-            port_name: "COM1".to_string(),
+            port_name: "/dev/ttyAMA0".to_string(),
             baud_rate: 9600,
         };
         config.load_parameters()?;
         Ok(config)
-    }
-
-    fn get_actual_config_name(&self) -> String {
-        self.config_name.clone()
-    }
-
-    fn change_config_name(&mut self, name: &str) -> Result<(), String> {
-        if name.is_empty() {
-            return Err("Name should not be empty".into());
-        }
-
-        if name
-            .chars()
-            .all(|arg0: char| char::is_ascii_alphanumeric(&arg0))
-        {
-            self.config_name = name.to_string();
-            return Ok(());
-        }
-
-        Err("Name should be alphanumeric".into())
     }
 
     fn load_parameters(&mut self) -> Result<(), String> {
@@ -130,5 +110,15 @@ impl ConfigIO for PortConfig {
         }
 
         return Err("Unable to get config file names".to_string());
+    }
+}
+
+impl Display for PortConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "\n Config_name: {}.ini \n Port name: {}, \n Baud rate: {}",
+            self.config_name, self.port_name, self.baud_rate
+        )
     }
 }

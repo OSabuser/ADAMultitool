@@ -1,4 +1,4 @@
-use log::{info, warn};
+use log::warn;
 
 use crate::mu_frame::MUFrame;
 use std::time::Duration;
@@ -26,30 +26,37 @@ impl HostClient {
     fn try_handshake(
         mut instance: Box<dyn serialport::SerialPort + 'static>,
     ) -> Result<Self, String> {
-        let mut frame = MUFrame::new();
+        let mut attempts: u8 = 1;
 
-        // TODO: 3 attempts
+        // Цикл попыток установить соединение
+        'handshake_loop: loop {
+            warn!("Attempt to connect: {} times", attempts);
+            let mut frame = MUFrame::new();
+            frame
+                .set_data(b"hello\n".to_vec())
+                .map_err(|e| e.to_string())?;
 
-        frame
-            .set_data(b"hello\n".to_vec())
-            .map_err(|e| e.to_string())?;
+            crate::send_proto_message(frame, &mut instance).map_err(|e| e.to_string())?;
 
-        crate::send_proto_message(frame, &mut instance).map_err(|e| e.to_string())?;
+            let answer = crate::recv_proto_message(&mut instance).map_err(|e| e.to_string())?;
 
-        let answer = crate::recv_proto_message(&mut instance).map_err(|e| e.to_string())?;
+            let string_data =
+                String::from_utf8(answer.get_data().to_vec()).map_err(|e| e.to_string())?;
 
-        let string_data =
-            String::from_utf8(answer.get_data().to_vec()).map_err(|e| e.to_string())?;
+            warn!("Received response: {}", string_data);
 
-        warn!("Received response: {}", string_data);
+            if answer.get_data() == b"Hi!\r\n" {
+                return Ok(Self {
+                    serial_port: instance,
+                });
+            }
+            attempts += 1;
 
-        if answer.get_data() != b"Hi!\r\n" {
-            return Err("Handshake failed!".to_string());
+            if attempts > 3 {
+                break 'handshake_loop;
+            }
         }
-
-        Ok(Self {
-            serial_port: instance,
-        })
+        return Err("Handshake failed!".to_string());
     }
 
     /// Отправка запроса на устройство

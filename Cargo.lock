@@ -436,7 +436,9 @@ dependencies = [
  "colored",
  "communication",
  "crossterm",
+ "env_logger",
  "inquire",
+ "log",
  "misc",
  "terminal-menu",
 ]

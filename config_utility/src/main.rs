@@ -4,24 +4,26 @@
 // WIN64
 // $env:RUST_LOG="trace"
 // ./executable
+pub mod config_client;
 pub mod device_config;
-pub mod protocol_client;
 
 use communication::serial_config::PortConfig;
 use log::{debug, info};
+
+use config_client::MUClient;
 use misc::config::ConfigIO;
-use protocol_client::MUClient;
 
 use crate::device_config::{GroupNumber, LoadCapacityIdx, MusicVolumeIdx, SoundVolumeIdx};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
 
-    let port_config = PortConfig::create_from_existing_config("pizero")?;
+    let port_config = PortConfig::create_from_existing("pizero")?;
 
-    let mut device_config = device_config::DeviceConfig::create_from_existing_config("pi0config")?;
+    let mut device_config = device_config::DeviceConfig::create_from_existing("pi0config")?;
 
     debug!("#1 Local device config: {}", device_config);
+    debug!("#2 Serial port config: {}", port_config);
 
     let mut client = MUClient::new(&port_config)?;
 

@@ -34,10 +34,11 @@ pub fn show_main_dialog(config: &mut PortConfig) -> Result<MainMenuStates, Strin
         label("MU LLC, 2025").colorize(Color::DarkGreen),
         label("-----------------------").colorize(Color::Green),
         label("Текущая конфигурация порта").colorize(Color::DarkGreen),
+        label(format!("Имя: {}", config.get_config_name())).colorize(Color::DarkGreen),
         label(format!("Порт: {}", config.get_port_name())).colorize(Color::DarkGreen),
         label(format!("Скорость: {}", config.get_baud_rate())).colorize(Color::DarkGreen),
         label("-----------------------").colorize(Color::Green),
-        back_button(MAIN_MENU_MEMBERS[0]),
+        button(MAIN_MENU_MEMBERS[0]),
         back_button(MAIN_MENU_MEMBERS[1]),
         back_button(MAIN_MENU_MEMBERS[2]),
         button(MAIN_MENU_MEMBERS[3]),
@@ -52,11 +53,11 @@ pub fn show_main_dialog(config: &mut PortConfig) -> Result<MainMenuStates, Strin
             return Ok(MainMenuStates::ConnectionRequestState);
         }
         val if val == MAIN_MENU_MEMBERS[1] => {
-            show_port_config_dialog(config)?;
+            *config = show_port_config_dialog()?;
             return Ok(MainMenuStates::ConfigurationState);
         }
         val if val == MAIN_MENU_MEMBERS[2] => {
-            show_load_config_dialog(config)?;
+            *config = show_load_config_dialog()?;
             return Ok(MainMenuStates::ConfigurationState);
         }
         _ => return Ok(MainMenuStates::ExitState),
@@ -64,38 +65,38 @@ pub fn show_main_dialog(config: &mut PortConfig) -> Result<MainMenuStates, Strin
 }
 
 /// Отображение диалога создания конфигурации порта
-fn show_port_config_dialog(config: &mut PortConfig) -> Result<(), String> {
+fn show_port_config_dialog() -> Result<PortConfig, String> {
     let port_selection = show_port_names_dialog()?;
-    config.set_port_name(port_selection);
-
     let baud_selection = show_baudrate_dialog()?;
-    config.set_baud_rate(baud_selection);
 
     if show_save_config_dialog() {
-        // set_name -> save_config
         let filename = show_get_filename_dialog()?;
-        config.change_config_name(&filename)?;
+        let mut config = PortConfig::create_new(&filename)?;
+        config.set_baud_rate(baud_selection);
+        config.set_port_name(port_selection.clone());
         config.save_parameters()?;
+        return Ok(config);
     }
 
-    return Ok(());
+    let mut config = PortConfig::create_new("default")?;
+    config.set_baud_rate(baud_selection);
+    config.set_port_name(port_selection);
+
+    return Ok(config);
 }
 
-fn show_load_config_dialog(config: &mut PortConfig) -> Result<(), String> {
+fn show_load_config_dialog() -> Result<PortConfig, String> {
     let config_files = PortConfig::list_existing_configs()?;
 
     if config_files.len() > 0 {
         let answer = Select::new("Выбор конфигурации", config_files).prompt();
         match answer {
-            Ok(selection) => {
-                config.change_config_name(&selection.clone())?;
-                config.load_parameters()?
-            }
+            Ok(selection) => return Ok(PortConfig::create_from_existing(&selection)?),
             Err(e) => return Err(e.to_string()),
         }
     }
 
-    Ok(())
+    return Ok(PortConfig::create_new("default")?);
 }
 
 /// Отображение промпта "Выбор имени последовательного порта"
@@ -123,7 +124,7 @@ fn show_baudrate_dialog() -> Result<u32, String> {
 /// Отображение промпта "Выбор имени конфигурационного файла"
 fn show_get_filename_dialog() -> Result<String, String> {
     // Валидатор пользовательского ввода
-    let custom_validator = |s: &str| {
+    let config_name_validator = |s: &str| {
         if s.is_empty() {
             return Ok(Validation::Invalid("Empty name".into()));
         }
@@ -141,7 +142,7 @@ fn show_get_filename_dialog() -> Result<String, String> {
 
     let name = Text::new("Имя для нового файла конфигурации:")
         .with_placeholder("should use only ASCII letters and numbers")
-        .with_validator(custom_validator)
+        .with_validator(config_name_validator)
         .prompt();
 
     match name {

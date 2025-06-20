@@ -1,6 +1,6 @@
 use communication::serial_config::PortConfig;
 use log::{info, warn};
-use protocol::host::HostClient;
+use protocol::client::HostClient;
 
 use crate::device_config::DeviceConfig;
 
@@ -74,5 +74,6 @@ impl MUClient {
     /// Запрос начала стриминга данных со станции управления
     pub fn start_data_streaming(&mut self) -> Result<String, String> {
         self.mu_client.send_request("set mode 1")
+        // TODO: check response
     }
 }

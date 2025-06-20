@@ -97,9 +97,9 @@ impl DeviceConfig {
 }
 
 impl ConfigIO for DeviceConfig {
-    fn create_default_config() -> Result<Self, String> {
+    fn create_new(name: &str) -> Result<Self, String> {
         let config = Self {
-            config_name: "default".to_string(),
+            config_name: name.to_string(),
             group_number: GroupNumber(0),
             music_volume_idx: MusicVolumeIdx(0),
             sound_volume_idx: SoundVolumeIdx(2),
@@ -109,7 +109,7 @@ impl ConfigIO for DeviceConfig {
         Ok(config)
     }
 
-    fn create_from_existing_config(name: &str) -> Result<Self, String>
+    fn create_from_existing(name: &str) -> Result<Self, String>
     where
         Self: Sized,
     {
@@ -124,25 +124,10 @@ impl ConfigIO for DeviceConfig {
         Ok(config)
     }
 
-    fn get_actual_config_name(&self) -> String {
+    fn get_config_name(&self) -> String {
         self.config_name.clone()
     }
 
-    fn change_config_name(&mut self, name: &str) -> Result<(), String> {
-        if name.is_empty() {
-            return Err("Name should not be empty".into());
-        }
-
-        if name
-            .chars()
-            .all(|arg0: char| char::is_ascii_alphanumeric(&arg0))
-        {
-            self.config_name = name.to_string();
-            return Ok(());
-        }
-
-        Err("Name should be alphanumeric".into())
-    }
     fn load_parameters(&mut self) -> Result<(), String> {
         let mut config_instance = Ini::new();
         config_instance.load(format!("configs/device/{}.ini", self.config_name))?;

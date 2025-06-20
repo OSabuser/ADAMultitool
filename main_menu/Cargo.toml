@@ -5,6 +5,8 @@ edition = "2024"
 authors.workspace = true
 
 [dependencies]
+log = { workspace = true }
+env_logger = { workspace = true }
 communication = { path = "../communication" }
 misc = { path = "../misc" }
 inquire = { version = "0.7.5", features = ["date"] }
