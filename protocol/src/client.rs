@@ -23,32 +23,25 @@ impl HostClient {
     }
 
     /// Попытка установить соединение с устройством
-    fn try_handshake(
-        mut instance: Box<dyn serialport::SerialPort + 'static>,
-    ) -> Result<Self, String> {
+    fn try_handshake(instance: Box<dyn serialport::SerialPort + 'static>) -> Result<Self, String> {
         let mut attempts: u8 = 1;
+
+        let mut client_connection = HostClient {
+            serial_port: instance,
+        };
 
         // Цикл попыток установить соединение
         'handshake_loop: loop {
-            warn!("Attempt to connect: {} times", attempts);
-            let mut frame = MUFrame::new();
-            frame
-                .set_data(b"hello\n".to_vec())
+            warn!("Attempting to handshake: {} times", attempts);
+
+            let answer = client_connection
+                .send_request("hello")
                 .map_err(|e| e.to_string())?;
 
-            crate::send_proto_message(frame, &mut instance).map_err(|e| e.to_string())?;
+            warn!("Responce from device: {}", answer);
 
-            let answer = crate::recv_proto_message(&mut instance).map_err(|e| e.to_string())?;
-
-            let string_data =
-                String::from_utf8(answer.get_data().to_vec()).map_err(|e| e.to_string())?;
-
-            warn!("Received response: {}", string_data);
-
-            if answer.get_data() == b"Hi!\r\n" {
-                return Ok(Self {
-                    serial_port: instance,
-                });
+            if answer.as_bytes() == b"Hi!\r\n" {
+                return Ok(client_connection);
             }
             attempts += 1;
 

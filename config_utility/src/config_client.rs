@@ -8,6 +8,18 @@ pub struct MUClient {
     mu_client: HostClient,
 }
 
+/// Режимы стриминга данных от устройства
+pub enum StreamingMode {
+    /// Без стриминга
+    SilentMode = 0,
+    /// Отправка данных, в случае изменения их состояния (и наличия)
+    OnChangeMode = 1,
+    /// Отправка данных периодически, с заданным в настройках (periodicity) периодом
+    PeriodicMode = 2,
+    /// Отправка данных по требованию
+    OnDemandMode = 3,
+}
+
 impl MUClient {
     pub fn new(serial_config: &PortConfig) -> Result<Self, String> {
         let client = HostClient::connect(
@@ -46,9 +58,10 @@ impl MUClient {
     pub fn push_settings_to_device(&mut self, config: &DeviceConfig) -> Result<(), String> {
         let group_number: String = config.get_group_number().try_into()?;
 
-        // TODO: check response
+        // TODO: check response, паттерн "Декоратор"
 
-        self.mu_client
+        let response = self
+            .mu_client
             .send_request(format!("set {}", group_number).as_str())?;
 
         let music_volume_idx: String = config.get_music_volume_idx().try_into()?;
@@ -72,8 +85,11 @@ impl MUClient {
     }
 
     /// Запрос начала стриминга данных со станции управления
-    pub fn start_data_streaming(&mut self) -> Result<String, String> {
-        self.mu_client.send_request("set mode 1")
-        // TODO: check response
+    pub fn start_data_streaming(&mut self, mode: StreamingMode) -> Result<String, String> {
+        let response = self
+            .mu_client
+            .send_request(format!("set mode {}", mode as u8).as_str())?;
+
+        Ok(response)
     }
 }

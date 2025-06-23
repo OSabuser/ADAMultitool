@@ -8,9 +8,9 @@ pub mod config_client;
 pub mod device_config;
 
 use communication::serial_config::PortConfig;
-use log::{debug, info};
+use log::{debug, warn};
 
-use config_client::MUClient;
+use config_client::{MUClient, StreamingMode};
 use misc::config::ConfigIO;
 
 use crate::device_config::{GroupNumber, LoadCapacityIdx, MusicVolumeIdx, SoundVolumeIdx};
@@ -20,7 +20,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let port_config = PortConfig::create_from_existing("pizero")?;
 
-    let mut device_config = device_config::DeviceConfig::create_from_existing("pi0config")?;
+    let mut device_config = device_config::DeviceConfig::create_from_existing("pizero")?;
 
     debug!("#1 Local device config: {}", device_config);
     debug!("#2 Serial port config: {}", port_config);
@@ -29,20 +29,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     client.get_settings_from_device(&mut device_config)?;
 
-    device_config.set_group_number(GroupNumber(0))?;
+    device_config.set_group_number(GroupNumber(1))?;
 
-    device_config.set_music_volume_idx(MusicVolumeIdx(0))?;
+    device_config.set_music_volume_idx(MusicVolumeIdx(2))?;
 
-    device_config.set_sound_volume_idx(SoundVolumeIdx(2))?;
+    device_config.set_sound_volume_idx(SoundVolumeIdx(3))?;
 
-    device_config.set_load_capacity_idx(LoadCapacityIdx(0))?;
+    device_config.set_load_capacity_idx(LoadCapacityIdx(4))?;
 
     client.push_settings_to_device(&device_config)?;
 
     client.get_settings_from_device(&mut device_config)?;
 
-    let response = client.start_data_streaming()?;
-    info!("Start data streaming: {}", response);
+    let response = client.start_data_streaming(StreamingMode::OnChangeMode)?;
+    warn!("Start data streaming: {}", response);
 
     Ok(())
 }
