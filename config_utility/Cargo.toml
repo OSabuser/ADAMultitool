@@ -9,5 +9,6 @@ communication = { path = "../communication" }
 configparser = {workspace = true}
 protocol = { path = "../protocol" }
 misc = { path = "../misc" }
+clap = { version = "4.5.40", features = ["derive"] }
 log = { workspace = true }
 env_logger = { workspace = true }

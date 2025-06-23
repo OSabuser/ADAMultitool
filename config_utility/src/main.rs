@@ -7,42 +7,86 @@
 pub mod config_client;
 pub mod device_config;
 
+use std::str::FromStr;
+
 use communication::serial_config::PortConfig;
-use log::{debug, warn};
+use log::{debug, info, warn};
 
 use config_client::{MUClient, StreamingMode};
 use misc::config::ConfigIO;
 
-use crate::device_config::{GroupNumber, LoadCapacityIdx, MusicVolumeIdx, SoundVolumeIdx};
+use crate::device_config::DeviceConfig;
+
+use clap::Parser;
+
+#[derive(Parser)]
+#[command(author = "Akimov Dmitry", name = "config_utility", version = "0.1.0", about, long_about = None)]
+struct Args {
+    /// Имя конфиг файла
+    #[arg(short = 'c', long = "config")]
+    config_name: String,
+    /// Тип команды: pull - запрос сохраненных в устройстве настроек, push - отправка новых настроек
+    #[arg(short = 'm', long = "mode")]
+    mode: CommandMode,
+}
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let args = Args::parse();
+
+    warn!("Command mode: {:?}", args.mode);
+
     env_logger::init();
 
     let port_config = PortConfig::create_from_existing("pizero")?;
 
-    let mut device_config = device_config::DeviceConfig::create_from_existing("pizero")?;
+    let mut device_config =
+        device_config::DeviceConfig::create_from_existing(args.config_name.as_str())?;
 
     debug!("#1 Local device config: {}", device_config);
     debug!("#2 Serial port config: {}", port_config);
 
     let mut client = MUClient::new(&port_config)?;
 
-    client.get_settings_from_device(&mut device_config)?;
+    match args.mode {
+        CommandMode::Pull => pull_command_handler(&mut device_config, &mut client)?,
+        CommandMode::Push => push_command_handler(&device_config, &mut client)?,
+    }
 
-    device_config.set_group_number(GroupNumber(1))?;
+    Ok(())
+}
 
-    device_config.set_music_volume_idx(MusicVolumeIdx(2))?;
+/// Получение настроек из устройства
+fn pull_command_handler(
+    user_config: &mut DeviceConfig,
+    client: &mut MUClient,
+) -> Result<(), String> {
+    client.get_settings_from_device(user_config)?;
+    user_config.save_parameters()?;
+    Ok(())
+}
 
-    device_config.set_sound_volume_idx(SoundVolumeIdx(3))?;
-
-    device_config.set_load_capacity_idx(LoadCapacityIdx(4))?;
-
-    client.push_settings_to_device(&device_config)?;
-
-    client.get_settings_from_device(&mut device_config)?;
+/// Отправка настроек на устройство
+fn push_command_handler(user_config: &DeviceConfig, client: &mut MUClient) -> Result<(), String> {
+    client.push_settings_to_device(user_config)?;
 
     let response = client.start_data_streaming(StreamingMode::OnChangeMode)?;
     warn!("Start data streaming: {}", response);
-
     Ok(())
+}
+
+#[derive(Clone, Debug)]
+enum CommandMode {
+    Pull,
+    Push,
+}
+
+impl FromStr for CommandMode {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "pull" => Ok(CommandMode::Pull),
+            "push" => Ok(CommandMode::Push),
+            _ => Err(format!("Unknown command mode: {}", s)),
+        }
+    }
 }
