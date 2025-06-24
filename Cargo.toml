@@ -3,7 +3,7 @@ resolver = "3"
 members = [ "communication","config_utility", "main_menu", "misc", "protocol", "rpi_menu"]
 
 [workspace.package]
-authors = ["Dmitry Akimov <akimov@machunit.com>"]
+authors = ["MU LLC <info@machunit.com>"]
 
 [workspace.dependencies]
 inquire = { version = "0.7.5", features = ["date"] }

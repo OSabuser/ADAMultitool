@@ -32,17 +32,20 @@ impl HostClient {
 
         // Цикл попыток установить соединение
         'handshake_loop: loop {
-            warn!("Attempting to handshake: {} times", attempts);
+            warn!("Handshake attempt: {}", attempts);
 
             let answer = client_connection
                 .send_request("hello")
-                .map_err(|e| e.to_string())?;
+                .map_err(|e| e.to_string());
 
-            warn!("Responce from device: {}", answer);
+            if let Ok(response) = answer {
+                warn!("Responce from device: {}", response);
 
-            if answer.as_bytes() == b"Hi!\r\n" {
-                return Ok(client_connection);
+                if response.as_bytes() == b"Hi!\r\n" {
+                    return Ok(client_connection);
+                }
             }
+
             attempts += 1;
 
             if attempts > 3 {

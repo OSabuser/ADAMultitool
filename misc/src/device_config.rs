@@ -7,6 +7,25 @@ const MAX_SOUND_VOLUME_IDX: u8 = 4;
 const MAX_MUSIC_VOLUME_IDX: u8 = 4;
 const MAX_CAPACITY_IDX: u8 = 15;
 
+pub const LOAD_PERSON_VARIANTS: [&str; 16] = [
+    "СКРЫТО",
+    "240кг 3чел.",
+    "320кг 4чел.",
+    "400кг 5чел.",
+    "450кг 6чел.",
+    "525кг 7чел.",
+    "630кг 8чел.",
+    "800кг 10чел.",
+    "800кг 11чел.",
+    "1000кг 13чел.",
+    "1150кг 15чел.",
+    "1275кг 16чел.",
+    "1275кг 17чел.",
+    "1425кг 18чел.",
+    "1600кг 20чел.",
+    "1600кг 21чел.",
+];
+
 // TODO: from, newtype pattern, tests
 
 #[derive(Debug, Clone)]
@@ -332,5 +351,29 @@ impl TryInto<String> for LoadCapacityIdx {
 
     fn try_into(self) -> Result<String, Self::Error> {
         Ok(format!("loadcapacity {}", self.0))
+    }
+}
+
+impl Display for GroupNumber {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl Display for MusicVolumeIdx {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} %", self.0 * 25)
+    }
+}
+
+impl Display for SoundVolumeIdx {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} %", self.0 * 25)
+    }
+}
+
+impl Display for LoadCapacityIdx {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", LOAD_PERSON_VARIANTS[self.0 as usize])
     }
 }

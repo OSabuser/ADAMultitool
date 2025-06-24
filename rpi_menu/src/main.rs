@@ -1,13 +1,16 @@
 use clap::Parser;
+use crossterm::event;
 use enigo::{
     Button, Coordinate,
     Direction::{Click, Press, Release},
     Enigo, Key, Keyboard, Mouse, Settings,
 };
 use misc::config::ConfigIO;
-use rppal::gpio::{Gpio, Level, Trigger};
+use rppal::gpio::{Event, Gpio, Level, Trigger};
 use std::error::Error;
 use std::io;
+use std::sync::{Arc, Mutex};
+use std::time::Duration;
 mod menu;
 
 use menu::{MainMenuStates, show_main_dialog};
@@ -22,25 +25,33 @@ struct Args {
 }
 
 /// BCM номер порта кнопки ввода
-pub const IN_BTN: u8 = 7;
+const IN_BTN: u8 = 7;
 /// BCM номер порта кнопки выбора
-pub const SEL_BTN: u8 = 8;
+const SEL_BTN: u8 = 8;
+
+/// Время, после которого завершится работа программы в случае отсутствия активности (нажатия кнопок))
+const MENU_TIMEOUT_MS: u64 = 15000;
 
 /// Обработчик нажатия кнопки ввода
-fn in_clicked_handler(lvl: Level) {
+fn in_clicked_handler(event: Event, activity_flag: Arc<Mutex<bool>>) {
     let mut enigo = Enigo::new(&Settings::default()).unwrap();
-    enigo.key(Key::DownArrow, Click);
+    enigo.key(Key::DownArrow, Click).unwrap();
+    *activity_flag.lock().unwrap() = true;
 }
 
 /// Обработчик нажатия кнопки выбора
-fn sel_clicked_handler(lvl: Level) {
+fn sel_clicked_handler(event: Event, activity_flag: Arc<Mutex<bool>>) {
     let mut enigo = Enigo::new(&Settings::default()).unwrap();
-    enigo.key(Key::Return, Click);
+    enigo.key(Key::Return, Click).unwrap();
+    *activity_flag.lock().unwrap() = true;
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
     let mut device_config = DeviceConfig::create_from_existing(args.config_name.as_str())?;
+
+    // Признак активности (пользователь всё ещё устанавливает параметры)
+    let is_button_pressed = Arc::new(Mutex::new(false));
 
     let mut button_in = Gpio::new()?.get(IN_BTN)?.into_input_pullup();
     let mut button_sel = Gpio::new()?.get(SEL_BTN)?.into_input_pullup();
@@ -48,21 +59,32 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     button_in.set_reset_on_drop(false);
     button_sel.set_reset_on_drop(false);
 
-    button_in.set_async_interrupt(Trigger::FallingEdge, move |lvl| in_clicked_handler(lvl))?;
-    button_sel.set_async_interrupt(Trigger::FallingEdge, move |lvl| sel_clicked_handler(lvl))?;
+    let activity_state_hold = is_button_pressed.clone();
+    button_in.set_async_interrupt(
+        Trigger::FallingEdge,
+        Some(Duration::from_millis(50)),
+        move |event| in_clicked_handler(event, activity_state_hold.clone()),
+    )?;
 
+    let activity_state_hold = is_button_pressed.clone();
+    button_sel.set_async_interrupt(
+        Trigger::FallingEdge,
+        Some(Duration::from_millis(50)),
+        move |event| sel_clicked_handler(event, activity_state_hold.clone()),
+    )?;
+
+    let activity_state_hold = is_button_pressed.clone();
     loop {
         match show_main_dialog(&mut device_config) {
             Ok(MainMenuStates::ConfigurationState) => {
                 continue;
             }
             Ok(MainMenuStates::ExitState) => {
-                // TODO: push config to the device
                 break;
             }
             Err(e) => return Err(e.into()),
         }
     }
-
+    device_config.save_parameters()?;
     Ok(())
 }
