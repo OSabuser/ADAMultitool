@@ -1,5 +1,5 @@
+use crate::config::ConfigIO;
 use configparser::ini::Ini;
-use misc::config::ConfigIO;
 use std::{fmt::Display, fs};
 
 // TODO: TIMEOUT

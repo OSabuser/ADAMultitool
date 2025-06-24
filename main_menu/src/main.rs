@@ -1,9 +1,9 @@
 mod main_menu;
 
-use communication::serial_config::PortConfig;
 use log::{debug, warn};
 use main_menu::{MainMenuStates, show_main_dialog};
 use misc::config::ConfigIO;
+use misc::serial_config::PortConfig;
 fn main() -> Result<(), String> {
     env_logger::init();
     let mut config = PortConfig::create_new("default")?;

@@ -1,9 +1,9 @@
-use communication::serial_config::PortConfig;
 use communication::serial_port::SerialInterface;
 use crossterm::style::Color;
 use inquire::validator::Validation;
 use inquire::{Confirm, Select, Text};
 use misc::config::ConfigIO;
+use misc::serial_config::PortConfig;
 use terminal_menu::{back_button, button, label, menu, mut_menu, run};
 
 const MAIN_MENU_ITEMS: usize = 4;

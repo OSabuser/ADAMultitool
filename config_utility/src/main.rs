@@ -5,17 +5,15 @@
 // $env:RUST_LOG="trace"
 // ./executable
 pub mod config_client;
-pub mod device_config;
 
 use std::str::FromStr;
 
-use communication::serial_config::PortConfig;
-use log::{debug, info, warn};
-
 use config_client::{MUClient, StreamingMode};
+use log::{debug, warn};
 use misc::config::ConfigIO;
+use misc::serial_config::PortConfig;
 
-use crate::device_config::DeviceConfig;
+use misc::device_config::DeviceConfig;
 
 use clap::Parser;
 
@@ -39,8 +37,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let port_config = PortConfig::create_from_existing("pizero")?;
 
-    let mut device_config =
-        device_config::DeviceConfig::create_from_existing(args.config_name.as_str())?;
+    let mut device_config = DeviceConfig::create_from_existing(args.config_name.as_str())?;
 
     debug!("#1 Local device config: {}", device_config);
     debug!("#2 Serial port config: {}", port_config);

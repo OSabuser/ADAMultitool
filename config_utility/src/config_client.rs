@@ -1,8 +1,8 @@
-use communication::serial_config::PortConfig;
+//use communication::serial_config::PortConfig;
 use log::{info, warn};
+use misc::device_config::DeviceConfig;
+use misc::serial_config::PortConfig;
 use protocol::client::HostClient;
-
-use crate::device_config::DeviceConfig;
 
 pub struct MUClient {
     mu_client: HostClient,
@@ -60,8 +60,7 @@ impl MUClient {
 
         // TODO: check response, паттерн "Декоратор"
 
-        let response = self
-            .mu_client
+        self.mu_client
             .send_request(format!("set {}", group_number).as_str())?;
 
         let music_volume_idx: String = config.get_music_volume_idx().try_into()?;
