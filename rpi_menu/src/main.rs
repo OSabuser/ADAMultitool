@@ -1,14 +1,8 @@
 use clap::Parser;
-use crossterm::event;
-use enigo::{
-    Button, Coordinate,
-    Direction::{Click, Press, Release},
-    Enigo, Key, Keyboard, Mouse, Settings,
-};
+
+use enigo::{Direction::Click, Enigo, Key, Keyboard, Settings};
 use misc::config::ConfigIO;
-use rppal::gpio::{Event, Gpio, Level, Trigger};
-use std::error::Error;
-use std::io;
+use rppal::gpio::{Event, Gpio, Trigger};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 mod menu;
@@ -28,9 +22,6 @@ struct Args {
 const IN_BTN: u8 = 7;
 /// BCM номер порта кнопки выбора
 const SEL_BTN: u8 = 8;
-
-/// Время, после которого завершится работа программы в случае отсутствия активности (нажатия кнопок))
-const MENU_TIMEOUT_MS: u64 = 15000;
 
 /// Обработчик нажатия кнопки ввода
 fn in_clicked_handler(event: Event, activity_flag: Arc<Mutex<bool>>) {
@@ -73,7 +64,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         move |event| sel_clicked_handler(event, activity_state_hold.clone()),
     )?;
 
-    let activity_state_hold = is_button_pressed.clone();
     loop {
         match show_main_dialog(&mut device_config) {
             Ok(MainMenuStates::ConfigurationState) => {

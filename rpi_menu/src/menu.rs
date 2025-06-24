@@ -1,6 +1,6 @@
 use crossterm::style::Color;
-use inquire::validator::Validation;
-use inquire::{Confirm, Select, Text};
+
+use inquire::Select;
 use misc::device_config::{
     DeviceConfig, GroupNumber, LOAD_PERSON_VARIANTS, LoadCapacityIdx, MusicVolumeIdx,
     SoundVolumeIdx,
@@ -65,23 +65,23 @@ pub fn show_main_dialog(config: &mut DeviceConfig) -> Result<MainMenuStates, Str
     match mut_menu(&main_menu).selected_item_name() {
         val if val == MAIN_MENU_MEMBERS[0] => {
             let group_number = show_group_number_dialog()?;
-            config.set_group_number(group_number);
+            config.set_group_number(group_number)?;
             return Ok(MainMenuStates::ConfigurationState);
         }
         val if val == MAIN_MENU_MEMBERS[1] => {
             let vol_idx = show_sound_volume_dialog()?;
-            config.set_sound_volume_idx(vol_idx);
+            config.set_sound_volume_idx(vol_idx)?;
             return Ok(MainMenuStates::ConfigurationState);
         }
         val if val == MAIN_MENU_MEMBERS[2] => {
             let vol_idx = show_music_volume_dialog()?;
-            config.set_music_volume_idx(vol_idx);
+            config.set_music_volume_idx(vol_idx)?;
 
             return Ok(MainMenuStates::ConfigurationState);
         }
         val if val == MAIN_MENU_MEMBERS[3] => {
             let cap_idx = show_capacity_dialog()?;
-            config.set_load_capacity_idx(cap_idx);
+            config.set_load_capacity_idx(cap_idx)?;
             return Ok(MainMenuStates::ConfigurationState);
         }
         _ => return Ok(MainMenuStates::ExitState),
