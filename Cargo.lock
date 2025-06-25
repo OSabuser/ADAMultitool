@@ -147,20 +147,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "communication"
-version = "0.1.0"
-dependencies = [
- "configparser",
- "misc",
- "serialport",
-]
-
-[[package]]
 name = "config_utility"
 version = "0.1.0"
 dependencies = [
  "clap",
- "communication",
  "env_logger",
  "log",
  "misc",
@@ -482,20 +472,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "19b955cdeb2a02b9117f121ce63aa52d08ade45de53e48fe6a38b39c10f6f709"
 dependencies = [
  "libc",
-]
-
-[[package]]
-name = "main_menu"
-version = "0.1.0"
-dependencies = [
- "colored",
- "communication",
- "crossterm",
- "env_logger",
- "inquire",
- "log",
- "misc",
- "terminal-menu",
 ]
 
 [[package]]

@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = [ "communication","config_utility", "main_menu", "misc", "protocol", "rpi_menu"]
+members = [ "config_utility", "misc", "protocol", "rpi_menu"]
 
 [workspace.package]
 authors = ["MU LLC <info@machunit.com>"]

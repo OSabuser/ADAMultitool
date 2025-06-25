@@ -5,7 +5,6 @@ edition = "2024"
 authors.workspace = true
 
 [dependencies]
-communication = { path = "../communication" }
 protocol = { path = "../protocol" }
 misc = { path = "../misc" }
 clap = { workspace = true }
