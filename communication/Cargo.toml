@@ -7,4 +7,4 @@ authors.workspace = true
 [dependencies]
 misc = { path = "../misc" }
 configparser = {workspace = true}
-serialport =  {version = "4.7.2", default-features = false}
+serialport = {workspace = true}

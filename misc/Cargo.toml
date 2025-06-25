@@ -6,4 +6,3 @@ authors.workspace = true
 
 [dependencies]
 configparser = {workspace = true}
-serialport = {version = "4.7.2", default-features = false}

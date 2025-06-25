@@ -8,4 +8,4 @@ authors.workspace = true
 log = { workspace = true }
 crc = "3.3.0"
 thiserror = { workspace = true }
-serialport = {version = "4.7.2", default-features = false}
+serialport = {workspace = true}

@@ -10,7 +10,7 @@
 ```bash
 cargo zigbuild --target=arm-unknown-linux-gnueabihf.2.28 --release # Cборка 1
 cross build --target=arm-unknown-linux-gnueabihf --bin config_utility --release # Cборка 2
-scp -P 1996 target/arm-unknown-linux-gnueabihf/release/config_utility pi@192.168.88.87:/home/pi # Передача файла на девайс
+scp -P 1996 target/arm-unknown-linux-gnueabihf/release/[bin] pi@[ip_address]:/home/pi # Передача файла на девайс
 serialport = {version = "4.7.2", default-features = false}` # Для кросскомпиляции
 ```
 
