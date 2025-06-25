@@ -1,0 +1,5 @@
+[build]
+build-std = false                              # do not build the std library. has precedence over xargo
+xargo = false                                   # enable the use of xargo by default
+zig = true                                    #  use zig cc for the builds
+default-target = "arm-unknown-linux-gnueabihf.2.28" 

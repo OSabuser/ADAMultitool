@@ -34,9 +34,7 @@ impl HostClient {
         'handshake_loop: loop {
             warn!("Handshake attempt: {}", attempts);
 
-            let answer = client_connection
-                .send_request("hello")
-                .map_err(|e| e.to_string());
+            let answer = client_connection.send_request("hello");
 
             if let Ok(response) = answer {
                 warn!("Responce from device: {}", response);
