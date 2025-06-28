@@ -1,8 +1,4 @@
 {
     //"rust-analyzer.cargo.target": "arm-unknown-linux-gnueabihf"
     "rust-analyzer.cargo.target": "aarch64-apple-darwin",
-    "rust-analyzer.files.excludeDirs": [
-    "rpi_menu/",
-  ],
-
 }

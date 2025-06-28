@@ -57,17 +57,57 @@ fn pull_command_handler(
     user_config: &mut DeviceConfig,
     client: &mut MUClient,
 ) -> Result<(), String> {
-    client.get_settings_from_device(user_config)?;
+    let mut attempts: u8 = 1;
+
+    // Цикл попыток установить соединение
+    'pull_request_loop: loop {
+        warn!("Pull request attempt: {}", attempts);
+        if client.get_settings_from_device(user_config).is_ok() {
+            break 'pull_request_loop;
+        }
+        attempts += 1;
+
+        if attempts > 3 {
+            return Err("Pull request failed!".to_string());
+        }
+    }
     user_config.save_parameters()?;
     Ok(())
 }
 
 /// Отправка настроек на устройство
 fn push_command_handler(user_config: &DeviceConfig, client: &mut MUClient) -> Result<(), String> {
-    client.push_settings_to_device(user_config)?;
+    // Цикл попыток установить соединение
+    let mut attempts: u8 = 1;
+    'push_request_loop: loop {
+        warn!("Push request attempt: {}", attempts);
+        if client.push_settings_to_device(user_config).is_ok() {
+            break 'push_request_loop;
+        }
+        attempts += 1;
 
-    let response = client.start_data_streaming(StreamingMode::OnChangeMode)?;
-    warn!("Start data streaming: {}", response);
+        if attempts > 3 {
+            return Err("Push request failed!".to_string());
+        }
+    }
+
+    attempts = 1;
+    'streaming_request_loop: loop {
+        warn!("Streaming request attempt: {}", attempts);
+        if client
+            .start_data_streaming(StreamingMode::OnChangeMode)
+            .is_ok()
+        {
+            break 'streaming_request_loop;
+        }
+        attempts += 1;
+
+        if attempts > 3 {
+            return Err("Streaming request failed!".to_string());
+        }
+    }
+
+    warn!("Data streaming started!");
     Ok(())
 }
 
