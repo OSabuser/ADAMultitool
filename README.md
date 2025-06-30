@@ -1,6 +1,6 @@
 # ADAMultitool [rpi-branch]
 
-> Набор утилит для работы с MCU по последовательному порту
+> Набор утилит для работы с MCU по последовательному порту (Raspberry Pi Zero 2W)
 
 ## Кросс-компиляция
 
@@ -8,9 +8,9 @@
 > [cross-rs](https://github.com/cross-rs/cross)
   
 ```bash
-cargo zigbuild --target=arm-unknown-linux-gnueabihf.2.28 --release # Cборка 1
-cross build --target=arm-unknown-linux-gnueabihf --bin config_utility --release # Cборка 2
-serialport = {version = "4.7.2", default-features = false}` # Для кросскомпиляции
+cargo zigbuild --target=arm-unknown-linux-gnueabihf.2.28 --release # Cборка 1 (zig)
+cross build --target=arm-unknown-linux-gnueabihf --bin config_utility --release # Cборка 2 (cross-rs via docker)
+serialport = {version = "4.7.2", default-features = false}` # Для кросскомпиляции (libudev не поддерживается на MacOS & WIN64)
 scp -P 1996 target/arm-unknown-linux-gnueabihf/release/[bin] pi@[ip_address]:/home/pi # Передача файла на девайс
 ```
 
@@ -22,9 +22,9 @@ scp -P 1996 target/arm-unknown-linux-gnueabihf/release/[bin] pi@[ip_address]:/ho
 # Запуск приложения
 lxterminal --title="ADAMultitool" -e bash -c "path_to_script"
 
-# Содержимое скрипта
+# Содержимое скрипта для запуска приложения
 cd %ADA_DIR
-export RUST_LOG=warn #Включить дальнейший вывод логов уровня WARN
+export RUST_LOG=warn # Включить дальнейший вывод логов уровня WARN
 ./config_utility --config=pizero --mode=pull # Загрузка настроек, хранящихся на устройстве
 wait
 sync
@@ -41,3 +41,7 @@ sync
 ### rpi_menu
 
 > TUI меню для изменения настроек индикатора
+
+### protocol
+
+> Библиотека для работы с протоколом "МЮ"

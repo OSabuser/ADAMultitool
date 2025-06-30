@@ -8,7 +8,7 @@ use std::{
     thread,
 };
 
-/// Задержка приема ответа
+/// Задержка перед приемом отклика от интерфейсной платы
 const ANSWER_DELAY_MS: u64 = 500;
 
 /// Отправка сообщения
@@ -30,6 +30,7 @@ fn recv_proto_message<Reader: Read>(mut reader: Reader) -> Result<MUFrame, Strin
     // Чтение отклика от интерфейсной платы
     reader.read(&mut read_buffer).map_err(|e| e.to_string())?;
 
+    // Сборка сообщения
     let prefix = read_buffer[0];
     raw_frame.push(prefix);
 

@@ -8,7 +8,7 @@ pub struct HostClient {
 }
 
 impl HostClient {
-    /// Подключение к устройству
+    /// Создание соединения RPi - интерфейсная плата over UART
     pub fn connect(
         port_name: &str,
         baudrate: u32,
@@ -53,7 +53,7 @@ impl HostClient {
         return Err("Handshake failed!".to_string());
     }
 
-    /// Отправка запроса на устройство
+    /// Отправка запроса на устройство, возврат полученного отклика
     pub fn send_request(&mut self, request: &str) -> Result<String, String> {
         let mut frame = MUFrame::new();
         frame

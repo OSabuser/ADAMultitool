@@ -20,6 +20,7 @@ pub enum MainMenuStates {
     ExitState,
 }
 
+/// Отображение главного меню
 pub fn show_main_dialog(config: &mut DeviceConfig) -> Result<MainMenuStates, String> {
     // Создание структуры главного меню
     let main_menu = menu(vec![

@@ -23,14 +23,14 @@ const IN_BTN: u8 = 7;
 /// BCM номер порта кнопки выбора
 const SEL_BTN: u8 = 8;
 
-/// Обработчик нажатия кнопки ввода
+/// Асинхронный обработчик нажатия кнопки ввода
 fn in_clicked_handler(event: Event, activity_flag: Arc<Mutex<bool>>) {
     let mut enigo = Enigo::new(&Settings::default()).unwrap();
     enigo.key(Key::DownArrow, Click).unwrap();
     *activity_flag.lock().unwrap() = true;
 }
 
-/// Обработчик нажатия кнопки выбора
+/// Асинхронный обработчик нажатия кнопки выбора
 fn sel_clicked_handler(event: Event, activity_flag: Arc<Mutex<bool>>) {
     let mut enigo = Enigo::new(&Settings::default()).unwrap();
     enigo.key(Key::Return, Click).unwrap();
@@ -39,6 +39,7 @@ fn sel_clicked_handler(event: Event, activity_flag: Arc<Mutex<bool>>) {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
+    // Чтение сохранённого локально на RPiконфига
     let mut device_config = DeviceConfig::create_from_existing(args.config_name.as_str())?;
 
     // Признак активности (пользователь всё ещё устанавливает параметры)

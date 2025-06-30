@@ -1,6 +1,5 @@
 pub trait ConfigIO {
     /// Создание конфига с параметрами по умолчанию
-    /// Сохранение конфига в файл ini
     fn create_new(name: &str) -> Result<Self, String>
     where
         Self: Sized;
@@ -14,7 +13,7 @@ pub trait ConfigIO {
 
     /// Сохранение параметров конфига в файл с именем self.name
     fn save_parameters(&self) -> Result<(), String>;
-    /// Загрузка параметров конфига из файл с именем self.name
+    /// Загрузка параметров конфига из файла с именем self.name
     fn load_parameters(&mut self) -> Result<(), String>;
     /// Список существующих конфигов
     fn list_existing_configs() -> Result<Vec<String>, String>;

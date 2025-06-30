@@ -1,9 +1,7 @@
 [build]
-build-std = false                              # do not build the std library. has precedence over xargo                    
-default-target = "arm-unknown-linux-gnueabihf" 
-
+build-std = false
+default-target = "arm-unknown-linux-gnueabihf"
 
 [build.zig]
-enable = true                 # enable or disable the use of zig cc
-version = "2.28"              # the glibc version to use
-   
+enable = true    # Сборка с участием линковщика Zig
+version = "2.28" # Версия glibc, установленная на RPi
