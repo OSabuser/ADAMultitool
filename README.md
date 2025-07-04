@@ -1,6 +1,6 @@
-# ADAMultitool [rpi-branch]
+# ADAMultitool [rk3399-branch]
 
-> Набор утилит для работы с MCU по последовательному порту (Raspberry Pi Zero 2W)
+> Набор утилит для работы с MCU по последовательному порту (Firefly RK3399-ROC-PC)
 
 ## Кросс-компиляция
 
