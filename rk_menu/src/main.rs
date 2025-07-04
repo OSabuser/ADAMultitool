@@ -27,30 +27,48 @@ use std::io::prelude::*;
 use std::io::stdout;
 use sysfs_gpio::{Direction, Edge, Pin};
 
-fn poll_s2_interrupt(pin: u64) -> sysfs_gpio::Result<()> {
-    let input = Pin::new(pin);
-    input.with_exported(|| {
-        input.set_direction(Direction::In)?;
-        input.set_edge(Edge::FallingEdge)?;
-        let mut poller = input.get_poller()?;
-        loop {
-            if let Some(pin_value) = poller.poll(1000)? {
-                if pin_value == 0 {
-                    println!("Button pressed!");
-                }
-            }
-        }
-    })
-}
-
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     //let args = Args::parse();
     // Чтение сохранённого локально на RPiконфига
     //let mut device_config = DeviceConfig::create_from_existing(args.config_name.as_str())?;
 
-    match poll_s2_interrupt(S2_BTN as u64) {
-        Ok(()) => println!("Interrupting Complete!"),
-        Err(err) => println!("Error: {}", err),
+    // Открытие потоков для обслуживания EXT прерываний
+    std::thread::spawn(move || {
+        let input = Pin::new(S2_BTN as u64);
+        input.with_exported(|| {
+            input.set_direction(Direction::In)?;
+            input.set_edge(Edge::FallingEdge)?;
+            let mut poller = input.get_poller()?;
+            loop {
+                if let Some(pin_value) = poller.poll(1000)? {
+                    if pin_value == 0 {
+                        println!("S2 pressed!");
+                    }
+                }
+            }
+        })
+    });
+
+    std::thread::spawn(move || {
+        let input = Pin::new(S1_BTN as u64);
+        input.with_exported(|| {
+            input.set_direction(Direction::In)?;
+            input.set_edge(Edge::FallingEdge)?;
+            let mut poller = input.get_poller()?;
+            loop {
+                if let Some(pin_value) = poller.poll(1000)? {
+                    if pin_value == 0 {
+                        println!("S1 pressed!");
+                        //TODO: enigo или передача флага по каналу
+                    }
+                }
+            }
+        })
+    });
+
+    loop {
+        println!("Main thread loop");
+        std::thread::sleep(Duration::from_millis(1000));
     }
 
     return Ok(());
